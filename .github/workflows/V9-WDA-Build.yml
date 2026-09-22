@@ -1,0 +1,37 @@
+name: Build WDA
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: 拉取 Appium WebDriverAgent 源码
+        run: |
+          git clone --depth=1 https://github.com/appium/WebDriverAgent.git WebDriverAgent
+
+      - name: 编译未签名真机包（iOS 18 SDK）
+        run: |
+          cd WebDriverAgent
+          xcodebuild -project WebDriverAgent.xcodeproj \
+            -scheme WebDriverAgentRunner \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: WebDriverAgentRunner-Runner
+          path: WebDriverAgent/build/Build/Products/Debug-iphoneos/WebDriverAgentRunner-Runner.app
+          if-no-files-found: error
+
+      - name: 列出产物核对
+        run: |
+          ls -la WebDriverAgent/build/Build/Products/Debug-iphoneos/WebDriverAgentRunner-Runner.app
+
